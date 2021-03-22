@@ -23,20 +23,36 @@ export default class DraggableTextArea extends Vue {
     this.$refs.textarea.focus();
   }
 
-  insertMediaContent(caption, url) {
-    const lf = "\n";
+  insertText(text, option) {
+    const { head = "", tail = "" } = option;
     const editor = this.$refs.textarea;
+    const startPos = option.start ?? this.$refs.textarea.selectionStart;
+    const endPos = option.end ?? this.$refs.textarea.selectionStart;
+    const textBefore = editor.value.substring(0, startPos);
+    const textEnd = editor.value.substring(endPos, editor.value.length);
+    const newText = head + text + tail;
+    editor.value = textBefore + newText + textEnd;
+    return [startPos, startPos + newText.length];
+  }
+
+  insertUploadingMediaContent(filename) {
+    const caption = `Uploading ${filename}...`;
+    const markdownMediaText = MD.Media(caption, "");
+    const option = { head: "\n", tail: "\n" };
+    return this.insertText(markdownMediaText, option);
+  }
+
+  insertMediaContent(caption, url, start, end) {
     const markdownMediaText = MD.Media(caption, url);
-    const { selectionStart, selectionEnd } = this.$refs.textarea;
-    const textBefore = editor.value.substring(0, selectionStart);
-    const textEnd = editor.value.substring(selectionStart, selectionEnd);
-    editor.value = lf + textBefore + markdownMediaText + textEnd + lf.repeat(2);
+    const option = { head: "\n", tail: "\n", start, end };
+    this.insertText(markdownMediaText, option);
   }
 
   async onDrop(files) {
     const file = files[0];
+    const [start, end] = this.insertUploadingMediaContent(file.name);
     const location = await this.uploadToS3(file);
-    this.insertMediaContent(file.name, location);
+    this.insertMediaContent(file.name, location, start, end);
   }
 }
 </script>
