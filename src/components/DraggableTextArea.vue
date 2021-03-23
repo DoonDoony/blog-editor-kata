@@ -4,6 +4,7 @@
       <textarea
         ref="textarea"
         class="editor"
+        @keydown="tabToIndent"
         @drop.prevent="onDrop($event.dataTransfer.files)"
         @dragover.prevent
         @dragenter.prevent
@@ -23,7 +24,7 @@ export default class DraggableTextArea extends Vue {
     this.$refs.textarea.focus();
   }
 
-  insertText(text, option) {
+  insertText(text, option = {}) {
     const { head = "", tail = "" } = option;
     const editor = this.$refs.textarea;
     const startPos = option.start ?? this.$refs.textarea.selectionStart;
@@ -54,6 +55,17 @@ export default class DraggableTextArea extends Vue {
     const location = await this.uploadToS3(file);
     this.insertMediaContent(file.name, location, start, end);
   }
+
+  tabToIndent(event) {
+    switch (event.key) {
+      case "Tab":
+        event.preventDefault();
+        this.insertText("\t");
+        break;
+      default:
+        return;
+    }
+  }
 }
 </script>
 
@@ -63,6 +75,7 @@ export default class DraggableTextArea extends Vue {
   flex-direction: column;
   height: 50vh;
   width: 100%;
+  tab-size: 4;
 }
 
 .editor {
