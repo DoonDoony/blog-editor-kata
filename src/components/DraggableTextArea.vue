@@ -2,9 +2,11 @@
   <div id="editor">
     <label>
       <textarea
-        ref="textarea"
+        ref="editor"
+        :value="text"
         class="editor"
-        @keydown="tabToIndent"
+        @input="text = $event.target.value"
+        @keydown.tab.prevent="tabToIndent"
         @drop.prevent="onDrop($event.dataTransfer.files)"
         @dragover.prevent
         @dragenter.prevent
@@ -14,25 +16,35 @@
 </template>
 
 <script>
-import { Component, Vue } from "vue-property-decorator";
+import { Component, Vue, Watch } from "vue-property-decorator";
 import S3UploadMixin from "@/mixins/S3UploadMixin";
 import MD from "@/utils/markdown";
 
 @Component({ mixins: [S3UploadMixin] })
 export default class DraggableTextArea extends Vue {
+  text = "";
+
+  get caretOffset() {
+    return this.$refs.editor.selectionStart;
+  }
+
+  @Watch("text")
+  onTextChange(text, oldText) {
+    console.log(text, oldText);
+  }
+
   mounted() {
-    this.$refs.textarea.focus();
+    this.$refs.editor.focus();
   }
 
   insertText(text, option = {}) {
     const { head = "", tail = "" } = option;
-    const editor = this.$refs.textarea;
-    const startPos = option.start ?? this.$refs.textarea.selectionStart;
-    const endPos = option.end ?? this.$refs.textarea.selectionStart;
-    const textBefore = editor.value.substring(0, startPos);
-    const textEnd = editor.value.substring(endPos, editor.value.length);
+    const startPos = option.start ?? this.caretOffset;
+    const endPos = option.end ?? this.caretOffset;
+    const textBefore = this.text.substring(0, startPos);
+    const textEnd = this.text.substring(endPos, this.text.length);
     const newText = head + text + tail;
-    editor.value = textBefore + newText + textEnd;
+    this.text = textBefore + newText + textEnd;
     return [startPos, startPos + newText.length];
   }
 
@@ -56,15 +68,8 @@ export default class DraggableTextArea extends Vue {
     this.insertMediaContent(file.name, location, start, end);
   }
 
-  tabToIndent(event) {
-    switch (event.key) {
-      case "Tab":
-        event.preventDefault();
-        this.insertText("\t");
-        break;
-      default:
-        return;
-    }
+  tabToIndent() {
+    this.text += "\t";
   }
 }
 </script>
