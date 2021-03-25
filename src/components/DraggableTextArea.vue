@@ -15,29 +15,40 @@
   </div>
 </template>
 
-<script>
-import { Component, Vue, Watch } from "vue-property-decorator";
+<script lang="ts">
+import { Component, Mixins, Watch } from "vue-property-decorator";
 import S3UploadMixin from "@/mixins/S3UploadMixin";
 import MD from "@/utils/markdown";
 
-@Component({ mixins: [S3UploadMixin] })
-export default class DraggableTextArea extends Vue {
+interface InsertTextOption {
+  head: string;
+  tail: string;
+  start?: number;
+  end?: number;
+}
+
+@Component
+export default class DraggableTextArea extends Mixins(S3UploadMixin) {
   text = "";
 
-  get caretOffset() {
-    return this.$refs.editor.selectionStart;
+  get editor(): HTMLTextAreaElement {
+    return this.$refs.editor as HTMLTextAreaElement;
+  }
+
+  get caretOffset(): number {
+    return this.editor.selectionStart;
   }
 
   @Watch("text")
-  onTextChange(text) {
+  onTextChange(text: string) {
     this.$store.dispatch("updateContent", text);
   }
 
   mounted() {
-    this.$refs.editor.focus();
+    this.editor.focus();
   }
 
-  insertText(text, option = {}) {
+  insertText(text: string, option: InsertTextOption): [number, number] {
     const { head = "", tail = "" } = option;
     const startPos = option.start ?? this.caretOffset;
     const endPos = option.end ?? this.caretOffset;
@@ -48,20 +59,20 @@ export default class DraggableTextArea extends Vue {
     return [startPos, startPos + newText.length];
   }
 
-  insertUploadingMediaContent(filename) {
+  insertUploadingMediaContent(filename: string) {
     const caption = `Uploading ${filename}...`;
     const markdownMediaText = MD.Media(caption, "");
     const option = { head: "\n", tail: "\n" };
     return this.insertText(markdownMediaText, option);
   }
 
-  insertMediaContent(caption, url, start, end) {
+  insertMediaContent(caption: string, url: string, start: number, end: number) {
     const markdownMediaText = MD.Media(caption, url);
     const option = { head: "\n", tail: "\n", start, end };
     this.insertText(markdownMediaText, option);
   }
 
-  async onDrop(files) {
+  async onDrop(files: FileList) {
     const file = files[0];
     const [start, end] = this.insertUploadingMediaContent(file.name);
     const location = await this.uploadToS3(file);

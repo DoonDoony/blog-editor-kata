@@ -4,12 +4,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { Vue } from "vue-property-decorator";
 
 export default class MarkdownPreviewButton extends Vue {
   async requestPreview() {
-    const response = await fetch(process.env.VUE_APP_MARKDOWN_PREVIEW_API, {
+    const response = await fetch(this.previewAPI, {
       method: "POST",
       mode: "cors",
       headers: {
@@ -19,6 +19,10 @@ export default class MarkdownPreviewButton extends Vue {
     });
     const { html } = await response.json();
     await this.$store.dispatch("updatePreview", html);
+  }
+
+  get previewAPI(): string {
+    return process.env.VUE_APP_MARKDOWN_PREVIEW_API ?? "NO_PREVIEW_API_URL";
   }
 }
 </script>
