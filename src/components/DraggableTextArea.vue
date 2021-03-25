@@ -29,8 +29,8 @@ export default class DraggableTextArea extends Vue {
   }
 
   @Watch("text")
-  onTextChange(text, oldText) {
-    console.log(text, oldText);
+  onTextChange(text) {
+    this.$store.dispatch("updateContent", text);
   }
 
   mounted() {
